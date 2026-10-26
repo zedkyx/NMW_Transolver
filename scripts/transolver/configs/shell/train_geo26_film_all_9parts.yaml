@@ -1,0 +1,165 @@
+# geo27（27 维几何+载荷，无材料变化）+ All GeomMemory FiLM
+#   只跑 qjt 应力 s2 → Mises + MaxPrincipal
+#   cache: /home/wang/zyx/cache_geo27/full/u0_s2_n12725/qjt_1_full.pt
+#   节点测度直接读同目录 qjt_1_full_nw_equal_div_inc.pt（不从 SHDX.inp 重算）
+#   评测 RelL2 用同一份 equal_div_inc（没有 mesh_equal sidecar，也没有全套 inp）
+#
+#   4 层，FiLM policy=all
+#   1000 epoch，early_stop=0，8:1:1，auto_eval 用验证集 best_eval
+#
+# 启动:
+#   bash scripts/transolver/sh/shell/train.sh \
+#     --config scripts/transolver/configs/shell/train_geo26_film_all_9parts.yaml
+# 预览:
+#   bash scripts/transolver/sh/shell/train.sh \
+#     --config scripts/transolver/configs/shell/train_geo26_film_all_9parts.yaml --dry_run
+# 断点:
+#   bash scripts/transolver/sh/shell/train.sh \
+#     --config scripts/transolver/configs/shell/train_geo26_film_all_9parts.yaml --start_from hjt_u
+
+key:
+  save_name: "geo27_film_all_qjt"
+  run_dir: "/home/wang/transolver/runs/shell/result/geo27/{save_name}_{timestamp}"
+  gpu: "0"
+  use_multi_net: 0
+  seed: 42
+
+# mesh q 的 instance 名在各 job 内单独指定（勿在 data 写全局 QJT-1）
+queue:
+  enabled: true
+  start_from: ""
+  jobs:
+    - id: qjt_s2
+      cache_path: "/home/wang/zyx/cache_geo27/full/u0_s2_n12725/qjt_1_full.pt"
+      output_cols: ["Mises", "MaxPrincipal"]
+      mesh_instance_name: "QJT-1"
+    #   batch_size: 32
+    # - id: hjt_s2
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u0_s2_n6400/hjt_1_full.pt"
+    #   output_cols: ["Mises", "MaxPrincipal"]
+    #   mesh_instance_name: "HJT-1"
+    #   batch_size: 32
+    # - id: qjt_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/qjt_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "QJT-1"
+    #   batch_size: 32
+    # - id: hjt_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/hjt_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "HJT-1"
+    #   batch_size: 32
+    # - id: hdg_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/hdg_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "HDG-1"
+    #   batch_size: 32
+    # - id: hkh_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/hkh_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "HKH-1"
+    #   batch_size: 32
+    # - id: qdg_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/qdg_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "QDG-1"
+    #   batch_size: 32
+    # - id: qkh_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/qkh_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "QKH-1"
+    #   batch_size: 32
+    # - id: part_1_1_u
+    #   cache_path: "/home/wang/zyx/cache_geo27/full/u2_s0_n6400/part_1_1_full.pt"
+    #   output_cols: ["U1", "U2"]
+    #   mesh_instance_name: "Part-1-1"
+    #   batch_size: 32
+
+data:
+  train_split: 0.8
+  val_split: 0.1
+  split_by: "random"
+  normalize_coords: 1
+  padding: 1
+  padding_value: 0.0
+  pos_norm_type: "min-max"
+  fx_norm_type: "mean-std"
+  y_norm_type: "mean-std"
+  filter_degenerate_y: 1
+  y_degenerate_eps: 1.0e-6
+  empty_fx: 0
+  sdf_to_pos: 0
+  use_sato: 0
+  quad_sato: 0
+  sato_index_path: ""
+  sato_grid_size: 0.01
+  use_node_weight: 1
+  node_weight_in_attn: 1
+  node_weight_in_norm: 1
+  node_weight_in_norm_fx: 1
+  node_weight_in_norm_y: 1
+  node_weight_in_loss: 1
+  node_weight_method: mesh
+  node_weight_lumping: equal_div_inc
+  persist_node_weight: 0
+  recompute_node_weight: 0
+  node_weight_max_edge: 0.0
+  abaqus_root: "/home/wang/keti_abaqus_geo27"
+  npz_dir: "/home/wang/keti_abaqus_geo27/cache_npz"
+
+model:
+  name: "Transolver_1D"
+  time_input: 0
+  use_multi_net: 1
+  use_spectral: 0
+  spectral_modes: 32
+  spectral_hi_freq_boost: 0.0
+  n_hidden: 64
+  n_layers: 4
+  n_heads: 1
+  dropout: 0.0
+  mlp_ratio: 4
+  slice_num: 32
+  ref: 8
+  unified_pos: 1
+  use_edge_conv: 0
+  use_linearno: 0
+  space_dim: 2
+  use_geom_memory: 1
+  geom_memory_policy: "all"
+  geom_memory_dim: 0
+  geom_encoder_hidden: 0
+  geom_sdf_channel: -1
+
+train:
+  batch_size: 32
+  epochs: 5000
+  lr: 0.001
+  weight_decay: 1e-4
+  lr_scheduler: cosine
+  lr_min: 1.0e-6
+  early_stop: 0
+  early_stop_patience: 100
+  early_stop_min_delta_rel: 0.001
+  max_grad_norm: 0.1
+  sdf_weight_alpha: 0.0
+  grad_loss_weight: 0
+  knn_enable: 0
+  knn_cache_rebuild: 0
+  knn_block_size: 256
+  grad_eps: 1e-6
+
+eval:
+  max_eval_batches: 0
+  viz_interval: 100
+  eval_interval: 1
+  auto_eval: 1
+  auto_eval_ckpt: best_eval
+  plot_attn_rank: 0
+  attn_rank_only: 0
+  attn_rank_rel_tol: 1.0e-3
+  attn_rank_overlay: ""
+  eval_rel_l2_quadrature: 1
+  eval_q_source: mesh_equal_div_inc
+  high_stress_analysis: 1
+  num_plot: 0

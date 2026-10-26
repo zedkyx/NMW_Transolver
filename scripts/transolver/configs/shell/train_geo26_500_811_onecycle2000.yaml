@@ -1,0 +1,114 @@
+# 对照 train_geo26_500_811.yaml 的余弦 5000 epoch（train_seed=42 已跑完）。
+# 只改调度器和预算：OneCycleLR，2000 epoch。其余与余弦 seed42 相同。
+# 划分 seed=42 固定；权重衰减仍是 1e-4；early_stop=0。
+#
+# 启动:
+# bash scripts/transolver/sh/shell/train.sh \
+#   --config scripts/transolver/configs/shell/train_geo26_500_811_onecycle2000.yaml
+#
+
+key:
+  save_name: "geo26_500_811_full_film_all_onecycle_epoch2000_seed42"
+  run_dir: "/home/wang/transolver/runs/shell/essay/geo26_sched/{save_name}_{timestamp}"
+  gpu: "0"
+  use_multi_net: 0
+  seed: 42
+  train_seed: 42
+
+queue:
+  enabled: true
+  start_from: ""
+  jobs:
+    - id: qjt_s2
+      cache_path: "/home/wang/zyx/cache_geo24_len/full/u0_s2_n6420/qjt_1_full.pt"
+      output_cols: ["Mises", "MaxPrincipal"]
+
+data:
+  train_split: 0.8
+  val_split: 0.1
+  split_by: "random"
+  normalize_coords: 1
+  padding: 1
+  padding_value: 0.0
+  pos_norm_type: "min-max"
+  fx_norm_type: "mean-std"
+  y_norm_type: "mean-std"
+  filter_degenerate_y: 1
+  y_degenerate_eps: 1.0e-6
+  empty_fx: 0
+  sdf_to_pos: 0
+  use_sato: 0
+  quad_sato: 0
+  sato_index_path: ""
+  sato_grid_size: 0.01
+  use_node_weight: 1
+  node_weight_in_attn: 1
+  node_weight_in_norm: 1
+  node_weight_in_norm_fx: 1
+  node_weight_in_norm_y: 1
+  node_weight_in_loss: 1
+  node_weight_method: mesh
+  node_weight_lumping: equal_div_inc
+  persist_node_weight: 0
+  recompute_node_weight: 0
+  node_weight_max_edge: 0.0
+  abaqus_root: "/home/wang/keti_abaqus_geo24_len"
+  npz_dir: "/home/wang/keti_abaqus_geo24_len/cache_npz"
+  mesh_instance_name: "QJT-1"
+
+model:
+  name: "Transolver_1D"
+  time_input: 0
+  use_multi_net: 0
+  use_spectral: 0
+  spectral_modes: 32
+  spectral_hi_freq_boost: 0.0
+  n_hidden: 64
+  n_layers: 4
+  n_heads: 1
+  dropout: 0.0
+  mlp_ratio: 4
+  slice_num: 32
+  ref: 8
+  unified_pos: 1
+  use_edge_conv: 0
+  use_linearno: 0
+  space_dim: 2
+  use_geom_memory: 1
+  geom_memory_policy: "all"
+  geom_memory_dim: 0
+  geom_encoder_hidden: 0
+  geom_sdf_channel: -1
+
+train:
+  batch_size: 32
+  epochs: 2000
+  lr: 0.001
+  weight_decay: 1e-4
+  lr_scheduler: onecycle
+  lr_min: 1.0e-6
+  early_stop: 0
+  early_stop_patience: 100
+  early_stop_min_delta_rel: 0.001
+  max_grad_norm: 0.1
+  sdf_weight_alpha: 0.0
+  grad_loss_weight: 0
+  knn_enable: 0
+  knn_cache_rebuild: 0
+  knn_block_size: 256
+  grad_eps: 1e-6
+
+eval:
+  max_eval_batches: 0
+  viz_interval: 100
+  eval_interval: 1
+  auto_eval: 1
+  auto_eval_ckpt: best_eval
+  plot_attn_rank: 0
+  attn_rank_only: 0
+  attn_rank_rel_tol: 1.0e-3
+  attn_rank_overlay: ""
+  eval_rel_l2_quadrature: 1
+  eval_q_source: mesh_equal
+  high_stress_analysis: 1
+  num_plot: 0
